@@ -1,0 +1,8 @@
+name = "wedding"
+type = "webpack"
+route = "wedding.meb.life/*"
+zone_id = "8d1784708f0fd779c25b1b208d5e5727"
+
+[site]
+bucket = "./build"
+entry-point = "workers-site"

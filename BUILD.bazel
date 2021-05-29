@@ -1,0 +1,174 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@io_bazel_rules_sass//:defs.bzl", "sass_binary", "sass_library")
+load("@npm//@bazel/typescript:index.bzl", "ts_devserver", "ts_library")
+load("@npm//@bazel/rollup:index.bzl", "rollup_bundle")
+load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_image",
+    "container_push",
+)
+load("@io_bazel_rules_docker//nodejs:image.bzl", "nodejs_image")
+
+PACKAGE_NAME = "website"
+
+sass_library(
+    name = "stylesheets",
+    srcs = glob([
+        "styles/*.scss",
+    ]),
+)
+
+sass_binary(
+    name = "css",
+    src = "styles/index.scss",
+    output_dir = "build",
+    deps = [":stylesheets"],
+)
+
+ts_library(
+    name = PACKAGE_NAME,
+    srcs = glob([
+        "src/**/*.tsx",
+        "src/**/*.ts",
+    ]),
+    deps = [
+        "@npm//@types/node",
+        "@npm//@types/react",
+        "@npm//@types/react-dom",
+        "@npm//bootstrap",
+        "@npm//react",
+        "@npm//react-bootstrap",
+        "@npm//react-dom",
+        "@npm//crypto-js",
+        "@npm//@types/crypto-js"
+    ],
+)
+
+filegroup(
+    name = "public",
+    srcs = [
+        ":css",
+        ":copy_images",
+    ] + glob(["public/*"]),
+)
+
+ts_devserver(
+    name = "devserver",
+    additional_root_paths = [
+        "npm/node_modules/react/umd",
+        "npm/node_modules/react-dom/umd",
+        "npm/node_modules/crypto-js",
+        "npm/node_modules/react-bootstrap/dist",
+        "wedding/build/styles",
+        "wedding/build/styles/images",
+        "wedding/public",
+    ],
+    port = 9999,
+    serving_path = "/bundle.min.js",
+    static_files = [
+        "public/index.html",
+        ":public",
+        "@npm//:node_modules/react/umd/react.development.js",
+        "@npm//:node_modules/react-dom/umd/react-dom.development.js",
+        "@npm//:node_modules/crypto-js/index.js",
+        "@npm//:node_modules/react-bootstrap/dist/react-bootstrap.js"
+    ],
+    deps = [":%s" % PACKAGE_NAME],
+)
+
+rollup_bundle(
+    name = "bin",
+    srcs = [
+        ":css",
+    ],
+    config_file = ":rollup.config.js",
+    entry_point = "src/index.tsx",
+    format = "umd",
+    link_workspace_root = True,
+    deps = [
+        ":%s" % PACKAGE_NAME,
+        "@npm//@babel/preset-env",
+        "@npm//@babel/preset-react",
+        "@npm//@rollup/plugin-babel",
+        "@npm//@rollup/plugin-commonjs",
+        "@npm//@rollup/plugin-node-resolve",
+        "@npm//@rollup/plugin-replace",
+        "@npm//@rollup/plugin-image",
+        "@npm//rollup-plugin-scss",
+        "@npm//rollup-plugin-typescript",
+    ],
+)
+
+genrule(
+    name = "copy_index",
+    srcs = [
+        ":index.html",
+    ],
+    outs = [
+        "build/index.html",
+    ],
+    cmd = "cp -r $(SRCS) $(OUTS)",
+)
+
+filegroup(
+    name = "image_files",
+    srcs = glob([
+        "styles/images/**",
+    ]),
+)
+
+pkg_tar(
+    name = "pack_images",
+    srcs = [":image_files"],
+    extension = "tar.gz",
+)
+
+genrule(
+    name = "copy_images",
+    srcs = [
+        ":pack_images",
+    ],
+    outs = [
+        "build/styles/images/favicon.ico",
+        "build/styles/images/title.jpg",
+        "build/styles/images/main.jpg",
+        "build/styles/images/amazonweddinglogo.svg"
+    ],
+    cmd = " && ".join([
+        "mkdir -p $(RULEDIR)/build/styles/images",
+        "tar -C $(RULEDIR)/build/styles/images -zxvf $(SRCS)",
+    ]),
+)
+
+genrule(
+    name = "copy_bin",
+    srcs = [
+        ":bin",
+    ],
+    outs = [
+        "build/bin.js",
+    ],
+    cmd = "cp -r $(SRCS) $(OUTS)",
+)
+
+filegroup(
+    name = "build_bundle",
+    srcs = [
+        ":copy_bin",
+        ":copy_images",
+        ":copy_index",
+        ":css",
+    ],
+)
+
+container_image(
+    name = "image",
+    base = "@wrangler//image",
+    data_path = "./",
+    files = [
+        ":build_bundle",
+        ":wrangler.toml",
+    ],
+)

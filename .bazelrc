@@ -1,0 +1,9 @@
+build:remote --bes_results_url=http://buildbuddy-app-service.buildbuddy.svc.cluster.local/invocation/
+build:remote --bes_backend=grpc://buildbuddy.buildbuddy.svc.cluster.local:1985
+build:remote --remote_cache=grpc://buildbuddy.buildbuddy.svc.cluster.local:1985
+build:remote --remote_timeout=3600
+
+build:local --bes_results_url=http://localhost:9999/invocation/
+build:local --bes_backend=grpc://localhost:8888
+build:local --remote_cache=grpc://localhost:8888
+build:local --remote_timeout=3600

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#000000" />
+		<meta
+			name="description"
+			content="Website by Aubri Henke"
+		/>
+		<title>Aubri and Matt</title>
+		<link rel="stylesheet" href="build/styles/index.css" />
+	</head>
+	<body>
+		<noscript>You need to enable JavaScript to run this app.</noscript>
+		<div id="root"></div>
+		<script src="/bundle.min.js"></script>
+		<script>
+			require.config({ paths: { "react-dom": "react-dom.development" } });
+			require.config({ paths: { react: "react.development" } });
+			require.config({ paths: { "crypto-js": "crypto-js"}})
+			require.config({
+				paths: {
+					"react-bootstrap": "react-bootstrap",
+				},
+			});
+			require(["wedding/src/index"]);
+		</script>
+	</body>
+</html>

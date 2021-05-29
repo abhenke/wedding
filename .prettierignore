@@ -1,0 +1,16 @@
+.idea
+.ijwb
+bazel-bin
+bazel-meb_life
+bazel-testlogs
+bazel-out
+node_modules
+.terraform
+
+*.tf
+*.yaml
+*.yml
+*.md
+*.rs
+*.bazel
+**/Jenkinsfile
